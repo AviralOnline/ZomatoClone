@@ -1,8 +1,11 @@
 const { Sequelize } = require('sequelize');
 
 let db;
-if (process.env.MYSQL_URL || process.env.DATABASE_URL) {
-  db = new Sequelize(process.env.MYSQL_URL || process.env.DATABASE_URL, {
+const isLocal = !process.env.RAILWAY_ENVIRONMENT;
+const connectionString = (isLocal && process.env.MYSQL_PUBLIC_URL) || process.env.MYSQL_URL || process.env.DATABASE_URL;
+
+if (connectionString) {
+  db = new Sequelize(connectionString, {
     dialect: 'mysql',
     logging: false,
     pool: {
