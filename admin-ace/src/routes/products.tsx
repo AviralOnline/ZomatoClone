@@ -17,7 +17,7 @@ export const Route = createFileRoute("/products")({
   component: ProductsPage,
 });
 
-const API_URL = "https://zomato-production-aca8.up.railway.app/api";
+const API_URL = "https://zomatoclone-production.up.railway.app/api";
 
 type Category = { id: number; name: string };
 type Product = {

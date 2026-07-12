@@ -410,7 +410,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>(sampleOrders);
   const [currentRestaurant, setCurrentRestaurant] = useState<Restaurant | null>(null);
 
-  const API_URL = 'https://zomato-production-aca8.up.railway.app/api';
+  const API_URL = 'https://zomatoclone-production.up.railway.app/api';
 
   const addToCart = (item: MenuItem, restaurantId: string, restaurantName: string) => {
     setCart((prev) => {
