@@ -15,7 +15,7 @@ export const Route = createFileRoute("/categories")({
   component: CategoriesPage,
 });
 
-const API_URL = "zomatoclone-production.up.railway.app/api";
+const API_URL = "https://zomatoclone-production.up.railway.app/api";
 
 type Category = {
   id: number;

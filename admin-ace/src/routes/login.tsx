@@ -16,7 +16,7 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-const API_URL = "zomatoclone-production.up.railway.app/api";
+const API_URL = "https://zomatoclone-production.up.railway.app/api";
 
 function LoginPage() {
   const navigate = useNavigate();
