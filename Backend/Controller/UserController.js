@@ -3,8 +3,21 @@ const { generateToken } = require('../Midleware/AuthMilderware');
 
 const CreateUser = async (req, res) => {
     try {
-        const { mobile, password } = req.body;
-        const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+        const { mobile, password } = req.body || {};
+
+        // Handle image: on Railway multer uses memoryStorage (buffer),
+        // locally it uses diskStorage (filename on disk).
+        let imagePath = null;
+        if (req.file) {
+            if (req.file.buffer) {
+                // Railway / memoryStorage — encode as base64 data URL
+                const base64 = req.file.buffer.toString('base64');
+                imagePath = `data:${req.file.mimetype};base64,${base64}`;
+            } else {
+                // Local / diskStorage — relative path served via /uploads
+                imagePath = `/uploads/${req.file.filename}`;
+            }
+        }
 
         if (!mobile || !password) {
             return res.status(400).json({ error: 'Mobile and password are required' });
@@ -28,7 +41,7 @@ const CreateUser = async (req, res) => {
     catch (error) {
         res.status(500).json({ error: error.message });
     }
-}
+};
 
 
 const GetAllUsers = async (req, res) => {
@@ -38,29 +51,29 @@ const GetAllUsers = async (req, res) => {
     }
     catch (error) {
         res.status(500).json({ error: error.message });
-    }   
+    }
 };
 
 const DeleteUser = async (req, res) => {
-    try{
+    try {
         const user = await User.findByPk(req.params.id);
-        if(user){
+        if (user) {
             await user.destroy();
-            res.status(200).json({message: 'User deleted successfully'});
+            res.status(200).json({ message: 'User deleted successfully' });
         }
-        else{
-            res.status(404).json({error: 'User not found'});
+        else {
+            res.status(404).json({ error: 'User not found' });
         }
     }
-    catch(error){
-        res.status(500).json({error: error.message});
+    catch (error) {
+        res.status(500).json({ error: error.message });
     }
 };
 
 
 const LoginUser = async (req, res) => {
     try {
-        const { mobile, password } = req.body;
+        const { mobile, password } = req.body || {};
 
         if (!mobile || !password) {
             return res.status(400).json({ error: 'Mobile and password are required' });
@@ -73,7 +86,7 @@ const LoginUser = async (req, res) => {
         else if (user.password !== password) {
             return res.status(401).json({ error: 'Invalid password' });
         }
-        else{
+        else {
             const token = generateToken(user);
             res.status(200).json({ message: 'Login successful', user, token });
         }
@@ -85,4 +98,3 @@ const LoginUser = async (req, res) => {
 
 
 module.exports = { CreateUser, GetAllUsers, DeleteUser, LoginUser };
-
