@@ -33,7 +33,7 @@ interface PaymentLocationState {
   address?: string;
 }
 
-const API_URL = 'https://zomatoclone-production.up.railway.app/api';
+const API_URL = 'https://zomato-production-aca8.up.railway.app/api';
 
 export default function Payment() {
   const { clearCart } = useApp();

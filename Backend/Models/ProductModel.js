@@ -43,6 +43,7 @@ const Product = db.define('Product', {
   },
 }, {
   timestamps: true,
+  tableName: 'Products',
 });
 
 Category.hasMany(Product, { foreignKey: 'categoryId', as: 'products' });

@@ -17,7 +17,7 @@ export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
 });
 
-const API_URL = "https://zomatoclone-production.up.railway.app/api";
+const API_URL = "https://zomato-production-aca8.up.railway.app/api";
 
 const steps = [
   { icon: Store, title: "Restaurant details", desc: "Owner, login and cuisine" },

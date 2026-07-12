@@ -1,22 +1,35 @@
 const { Sequelize } = require('sequelize');
 
-const DATABASE_URL = process.env.DATABASE_URL || 'mysql://root:DcVPlvdCMHyLuaCqeAIeGfEEWWtVkSPV@hayabusa.proxy.rlwy.net:27520/railway';
-
-const db = new Sequelize(DATABASE_URL, {
-  dialect: 'mysql',
-  logging: false,
-  pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000,
-  },
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
+let db;
+if (process.env.MYSQL_URL || process.env.DATABASE_URL) {
+  db = new Sequelize(process.env.MYSQL_URL || process.env.DATABASE_URL, {
+    dialect: 'mysql',
+    logging: false,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
     },
-  },
-});
+  });
+} else {
+  db = new Sequelize(
+    process.env.DB_NAME || process.env.MYSQLDATABASE || 'railway',
+    process.env.DB_USER || process.env.MYSQLUSER || 'root',
+    process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || 'DcVPlvdCMHyLuaCqeAIeGfEEWWtVkSPV',
+    {
+      host: process.env.DB_HOST || process.env.MYSQLHOST || 'hayabusa.proxy.rlwy.net',
+      port: process.env.DB_PORT || process.env.MYSQLPORT || 27520,
+      dialect: 'mysql',
+      logging: false,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+    }
+  );
+}
 
 module.exports = db;

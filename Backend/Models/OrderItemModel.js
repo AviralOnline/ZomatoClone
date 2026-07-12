@@ -23,6 +23,7 @@ const OrderItem = db.define('OrderItem', {
   },
 }, {
   timestamps: true,
+  tableName: 'OrderItems',
 });
 
 Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'items' });

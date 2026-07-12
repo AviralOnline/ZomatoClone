@@ -75,6 +75,7 @@ const Vendor = db.define('Vendor', {
   },
 }, {
   timestamps: true,
+  tableName: 'Vendors',
 });
 
 module.exports = Vendor;

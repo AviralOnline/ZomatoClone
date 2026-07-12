@@ -23,6 +23,7 @@ const User = db.define('User', {
     },
 }, {
     timestamps: true,
+    tableName: 'Users',
 });
 
 module.exports = User;

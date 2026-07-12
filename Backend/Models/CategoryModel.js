@@ -22,6 +22,7 @@ const Category = db.define('Category', {
   },
 }, {
   timestamps: true,
+  tableName: 'Categories',
 });
 
 module.exports = Category;
