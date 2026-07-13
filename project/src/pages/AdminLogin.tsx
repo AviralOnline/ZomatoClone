@@ -85,13 +85,13 @@ export default function AdminLogin({ onAuth }: AdminLoginProps) {
         <form onSubmit={handleLogin} className="space-y-5 bg-slate-900/60 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              Admin Identifier / Email
+              Admin Mobile Number
             </label>
             <div className="relative">
               <input
                 type="text"
                 className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 focus:border-red-500/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-500/50 text-slate-100 transition-colors placeholder-slate-600 text-sm"
-                placeholder="e.g. admin@zomato.com"
+                placeholder="e.g. 9999999999"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 disabled={loading}
