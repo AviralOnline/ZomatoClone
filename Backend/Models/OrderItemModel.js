@@ -26,7 +26,7 @@ const OrderItem = db.define('OrderItem', {
   tableName: 'OrderItems',
 });
 
-Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'items' });
+Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'itemsAssociation' });
 OrderItem.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
 Product.hasMany(OrderItem, { foreignKey: 'productId', as: 'orderItems' });
 OrderItem.belongsTo(Product, { foreignKey: 'productId', as: 'product' });

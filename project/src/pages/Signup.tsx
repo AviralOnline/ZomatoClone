@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 interface SignupProps {
   onAuth: (user: any, token: string) => void;
 }
@@ -27,7 +28,7 @@ function Signup({ onAuth }: SignupProps) {
      }
 
    try {
-     const response = await fetch('https://zomatoclone-production.up.railway.app/api/users/signup', {
+     const response = await fetch(`${API_BASE_URL}/api/users/signup`, {
     
          method: 'POST',
          body: formData,

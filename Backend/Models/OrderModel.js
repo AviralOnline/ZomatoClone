@@ -14,9 +14,14 @@ const Order = db.define('Order', {
     allowNull: false,
     unique: true,
   },
+  orderId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true,
+  },
   status: {
-    type: DataTypes.ENUM('pending', 'preparing', 'on_the_way', 'delivered', 'cancelled'),
-    defaultValue: 'pending',
+    type: DataTypes.STRING,
+    defaultValue: 'Order Placed',
   },
   address: {
     type: DataTypes.TEXT,
@@ -26,25 +31,57 @@ const Order = db.define('Order', {
     type: DataTypes.FLOAT,
     allowNull: false,
   },
+  totalPrice: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   deliveryFee: {
     type: DataTypes.FLOAT,
     defaultValue: 40,
   },
+  platformFee: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
   taxes: {
     type: DataTypes.FLOAT,
+    defaultValue: 0,
+  },
+  gst: {
+    type: DataTypes.INTEGER,
     defaultValue: 0,
   },
   discount: {
     type: DataTypes.FLOAT,
     defaultValue: 0,
   },
+  tip: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
   total: {
     type: DataTypes.FLOAT,
     allowNull: false,
   },
+  grandTotal: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   paymentMode: {
     type: DataTypes.STRING,
     defaultValue: 'COD',
+  },
+  paymentMethod: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  restaurantName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  items: {
+    type: DataTypes.TEXT,
+    allowNull: true,
   },
 }, {
   timestamps: true,

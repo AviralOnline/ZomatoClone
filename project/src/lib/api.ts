@@ -1,6 +1,7 @@
 import { MenuItem, Restaurant } from '../context/AppContext';
+import { API_BASE_URL } from '../config';
 
-const API_URL = 'https://zomatoclone-production.up.railway.app/api';
+const API_URL = `${API_BASE_URL}/api`;
 
 type ApiProduct = {
   id: number;

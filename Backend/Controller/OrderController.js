@@ -2,6 +2,7 @@ const Order = require('../Models/OrderModel');
 const OrderItem = require('../Models/OrderItemModel');
 const Product = require('../Models/ProductModel');
 const Vendor = require('../Models/VendorModel');
+const User = require('../Models/UserModel');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 require('dotenv').config();
@@ -22,26 +23,41 @@ function statusToClient(status) {
 }
 
 function formatOrder(order) {
+  // Parse stringified items if available
+  let parsedItems = [];
+  if (order.items) {
+    try {
+      parsedItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    } catch (e) {
+      parsedItems = [];
+    }
+  }
+
+  // Fallback to OrderItems association if items field is empty
+  const itemsList = parsedItems.length > 0 
+    ? parsedItems 
+    : (order.itemsAssociation || []).map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
   return {
     id: order.orderNumber,
-    restaurantName: order.vendor ? order.vendor.restaurantName : '',
+    restaurantName: order.restaurantName || (order.vendor ? order.vendor.restaurantName : ''),
     vendorId: order.vendorId,
-    items: order.items.map((item) => ({
-      name: item.name,
-      quantity: item.quantity,
-      price: item.price,
-    })),
-    total: order.total,
+    items: itemsList,
+    total: order.grandTotal || order.total,
     status: statusToClient(order.status),
     date: order.createdAt.toISOString().split('T')[0],
     address: order.address,
-    paymentMode: order.paymentMode,
+    paymentMode: order.paymentMethod || order.paymentMode,
   };
 }
 
 async function CreateOrder(req, res) {
   try {
-    const { items, address, paymentMode = 'COD', deliveryFee = 40, discount = 0, paymentDetails } = req.body;
+    const { items, address, paymentMode = 'COD', deliveryFee = 40, discount = 0, tip = 0, paymentDetails } = req.body;
     if (!Array.isArray(items) || items.length === 0 || !address) {
       return res.status(400).json({ error: 'Items and delivery address are required' });
     }
@@ -62,19 +78,42 @@ async function CreateOrder(req, res) {
       return sum + product.price * Number(item.quantity);
     }, 0);
     const taxes = Math.round(subtotal * 0.05);
-    const total = subtotal + Number(deliveryFee) + taxes - Number(discount);
+    const platformFee = 5;
+    const parsedTip = Number(tip) || 0;
+    const total = subtotal + Number(deliveryFee) + taxes - Number(discount) + platformFee + parsedTip;
+
+    const orderNumber = `ORD${Date.now()}`;
+    const restaurantName = products[0].vendor ? products[0].vendor.restaurantName : 'Restaurant';
+
+    const itemsWithDetails = items.map(item => {
+      const product = products.find(p => p.id === Number(item.productId));
+      return {
+        name: product.name,
+        price: product.price,
+        quantity: Number(item.quantity)
+      };
+    });
 
     const order = await Order.create({
-      orderNumber: `ORD${Date.now()}`,
+      orderNumber,
+      orderId: orderNumber,
       userId: req.user.id,
       vendorId: vendorIds[0],
+      restaurantName,
+      items: JSON.stringify(itemsWithDetails),
       address,
       subtotal,
+      totalPrice: subtotal,
       deliveryFee,
+      platformFee,
       taxes,
+      gst: taxes,
       discount,
+      tip: parsedTip,
       total,
+      grandTotal: total,
       paymentMode,
+      paymentMethod: paymentMode,
       status: paymentMode === 'ONLINE' ? 'pending' : 'preparing',
     });
 
@@ -89,8 +128,18 @@ async function CreateOrder(req, res) {
       });
     }));
 
+    // Update stock levels
+    await Promise.all(items.map(async (item) => {
+      const product = products.find((p) => p.id === Number(item.productId));
+      if (product) {
+        const currentStock = product.stock || 0;
+        const newStock = Math.max(0, currentStock - Number(item.quantity));
+        await product.update({ stock: newStock });
+      }
+    }));
+
     const created = await Order.findByPk(order.id, {
-      include: [{ model: OrderItem, as: 'items' }, { model: Vendor, as: 'vendor' }],
+      include: [{ model: OrderItem, as: 'itemsAssociation' }, { model: Vendor, as: 'vendor' }],
     });
 
     if (paymentMode === 'ONLINE') {
@@ -174,7 +223,7 @@ async function ConfirmPayment(req, res) {
       return res.status(400).json({ error: 'Payment verification failed' });
     }
 
-    await order.update({ status: 'preparing', paymentMode: 'ONLINE' });
+    await order.update({ status: 'preparing', paymentMode: 'ONLINE', paymentMethod: 'ONLINE' });
 
     res.json({ message: 'Payment confirmed', order: formatOrder(await Order.findByPk(order.id, { include: [{ model: OrderItem, as: 'items' }, { model: Vendor, as: 'vendor' }] })) });
   } catch (error) {
@@ -186,7 +235,7 @@ async function GetMyOrders(req, res) {
   try {
     const orders = await Order.findAll({
       where: { userId: req.user.id },
-      include: [{ model: OrderItem, as: 'items' }, { model: Vendor, as: 'vendor' }],
+      include: [{ model: OrderItem, as: 'itemsAssociation' }, { model: Vendor, as: 'vendor' }],
       order: [['createdAt', 'DESC']],
     });
     res.json(orders.map(formatOrder));
@@ -199,7 +248,7 @@ async function GetVendorOrders(req, res) {
   try {
     const orders = await Order.findAll({
       where: { vendorId: req.vendor.id },
-      include: [{ model: OrderItem, as: 'items' }, { model: Vendor, as: 'vendor' }],
+      include: [{ model: OrderItem, as: 'itemsAssociation' }, { model: Vendor, as: 'vendor' }],
       order: [['createdAt', 'DESC']],
     });
     res.json(orders.map(formatOrder));
@@ -208,4 +257,83 @@ async function GetVendorOrders(req, res) {
   }
 }
 
-module.exports = { CreateOrder, ConfirmPayment, GetMyOrders, GetVendorOrders };
+// ADMIN OPERATIONAL HANDLERS
+async function GetAllOrders(req, res) {
+  try {
+    const orders = await Order.findAll({
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'mobile', 'image', 'isAdmin', 'isBlocked'] }
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+async function GetOrderById(req, res) {
+  try {
+    const order = await Order.findByPk(req.params.id, {
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'mobile', 'image', 'isAdmin', 'isBlocked'] }
+      ],
+    });
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+async function GetOrdersByUserId(req, res) {
+  try {
+    const orders = await Order.findAll({
+      where: { userId: req.params.userId },
+      order: [['createdAt', 'DESC']],
+    });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+async function UpdateOrder(req, res) {
+  try {
+    const order = await Order.findByPk(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    await order.update(req.body);
+    res.json({ message: 'Order updated successfully', order });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+async function DeleteOrder(req, res) {
+  try {
+    const order = await Order.findByPk(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    await order.destroy();
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+module.exports = {
+  CreateOrder,
+  ConfirmPayment,
+  GetMyOrders,
+  GetVendorOrders,
+  GetAllOrders,
+  GetOrderById,
+  GetOrdersByUserId,
+  UpdateOrder,
+  DeleteOrder,
+};

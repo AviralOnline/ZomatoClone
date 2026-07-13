@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
-import React, { useState } from 'react'
+import React, { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 function Login({ onAuth }: { onAuth: (user: any, token: string) => void }) {
   const [mobile, setMobile] = useState('');
@@ -14,7 +15,7 @@ function Login({ onAuth }: { onAuth: (user: any, token: string) => void }) {
          password,
      };
      try {
-       const response = await fetch('https://zomatoclone-production.up.railway.app/api/users/login', {
+       const response = await fetch(`${API_BASE_URL}/api/users/login`, {
            method: 'POST',
            headers: {
                'Content-Type': 'application/json',

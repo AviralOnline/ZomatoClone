@@ -13,6 +13,8 @@ import { useEffect, useState } from 'react';
 import ProtectRoutes from './ProtectRoutes';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   const [user, setUser] = useState<any | null>(null);
@@ -65,6 +67,8 @@ function App() {
             } />
             <Route path="login" element={<Login onAuth={handleAuth} />} />
             <Route path="signup" element={<Signup onAuth={handleAuth} />} />
+            <Route path="admin-login" element={<AdminLogin onAuth={handleAuth} />} />
+            <Route path="admin-dashboard" element={<AdminDashboard />} />
           </Route>
         </Routes>
       </Router>

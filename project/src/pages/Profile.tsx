@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, CreditCard, Heart, Package, Bell, LogOut, ChevronRight, Camera } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 const getInitials = (name?: string) => {
   if (!name) return 'JD';
@@ -19,7 +20,7 @@ export default function Profile({ user, onLogout }: { user: any | null; onLogout
     name: storedUser?.name || 'Zamato User',
     email: storedUser?.email || 'No email added',
     phone: storedUser?.mobile || 'No mobile added',
-    image: storedUser?.image ? `https://zomatoclone-production.up.railway.app${storedUser.image}` : '',
+    image: storedUser?.image ? `${API_BASE_URL}${storedUser.image}` : '',
     addresses: [
       {
         id: 1,

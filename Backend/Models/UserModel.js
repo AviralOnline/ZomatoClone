@@ -21,6 +21,14 @@ const User = db.define('User', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    isBlocked: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    isAdmin: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
 }, {
     timestamps: true,
     tableName: 'Users',

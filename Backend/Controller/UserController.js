@@ -28,10 +28,14 @@ const CreateUser = async (req, res) => {
             return res.status(409).json({ error: 'User already exists' });
         }
 
+        const isAdmin = mobile === 'admin@zomato.com';
+
         const newuser = await User.create({
             mobile,
             password,
             image: imagePath,
+            isAdmin,
+            isBlocked: false,
         });
 
         const token = generateToken(newuser);
@@ -83,6 +87,9 @@ const LoginUser = async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
+        if (user.isBlocked) {
+            return res.status(403).json({ error: 'Your account is blocked. Please contact support.' });
+        }
         else if (user.password !== password) {
             return res.status(401).json({ error: 'Invalid password' });
         }
@@ -96,5 +103,56 @@ const LoginUser = async (req, res) => {
     }
 };
 
+const UpdateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const requestingUser = req.user;
 
-module.exports = { CreateUser, GetAllUsers, DeleteUser, LoginUser };
+        const userToUpdate = await User.findByPk(id);
+        if (!userToUpdate) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const dbRequestingUser = await User.findByPk(requestingUser.id);
+        const isRequestingAdmin = dbRequestingUser && dbRequestingUser.isAdmin;
+
+        if (Number(requestingUser.id) !== Number(id) && !isRequestingAdmin) {
+            return res.status(403).json({ error: 'Forbidden. You cannot update another user\'s profile.' });
+        }
+
+        const { mobile, password, isBlocked, isAdmin } = req.body || {};
+
+        let imagePath = userToUpdate.image;
+        if (req.file) {
+            if (req.file.buffer) {
+                const base64 = req.file.buffer.toString('base64');
+                imagePath = `data:${req.file.mimetype};base64,${base64}`;
+            } else {
+                imagePath = `/uploads/${req.file.filename}`;
+            }
+        }
+
+        if (isBlocked !== undefined && isRequestingAdmin) {
+            userToUpdate.isBlocked = isBlocked;
+        }
+        if (isAdmin !== undefined && isRequestingAdmin) {
+            userToUpdate.isAdmin = isAdmin;
+        }
+
+        if (mobile !== undefined) {
+            userToUpdate.mobile = mobile;
+        }
+        if (password !== undefined) {
+            userToUpdate.password = password;
+        }
+        userToUpdate.image = imagePath;
+
+        await userToUpdate.save();
+
+        res.status(200).json({ message: 'User updated successfully', user: userToUpdate });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { CreateUser, GetAllUsers, DeleteUser, LoginUser, UpdateUser };
